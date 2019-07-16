@@ -2859,6 +2859,7 @@ MASSGIS.init_map = function() {
 
 				MASSGIS.preSelectionLayer.redraw();
 				MASSGIS.lyr_address_points.redraw();
+				$('#confirm_add_multi_part_popup a[data-icon=plus]').off("click");
 			});
 		} else if (!tappedOnAPoint && MASSGIS.preSelectionLayer.features.length === 0 && MASSGIS.selectionLayer.features.length === 0) {
 			var conf = confirm("Add a new Address Point at this location?");
