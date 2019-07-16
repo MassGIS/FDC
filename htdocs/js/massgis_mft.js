@@ -1135,6 +1135,26 @@ setTimeout(function() {
 	$('#linked_addrs').on("click",'div[data-action="click_to_delete"]',function(e) {
 		e.stopPropagation();
 		var that = this;
+		var f = MASSGIS.linkedAddressLayer.getFeatureByFid($(that).data('fid'));
+		var toDelete = [];
+		if (f.selStatus == 'selected') {
+			// delete this f, and any other selected features
+			$.each(MASSGIS.linkedAddressLayer.features, function (idx, feature) {
+				if (feature.selStatus == 'selected') {
+					toDelete.push(feature);
+				}
+			});
+		} else {
+			// delete only this f
+			toDelete.push(f);
+		}
+
+		if (toDelete.length > 1) {
+			$('#confirm_address_delete_popup a[data-icon="delete"] .ui-btn-text').html("Delete These " + toDelete.length + " Addresses?");
+		} else {
+			$('#confirm_address_delete_popup a[data-icon="delete"] .ui-btn-text').html("Delete This Address?");
+		}
+
 		$('#confirm_address_delete_popup').popup().popup("open");
 		$('#confirm_address_delete_popup a[data-icon=back]').on("click",function(e) {
 			e.stopPropagation();
@@ -1148,73 +1168,73 @@ setTimeout(function() {
 			e.stopPropagation();
 			$('#confirm_address_delete_popup a[data-icon=delete]').off("click");
 			$('#confirm_address_delete_popup a[data-icon=back]').off("click");
+			$.each(toDelete, function (idx, f) {
+				// remove from linked addrs
+				MASSGIS.linkedAddressLayer.removeFeatures([f]);
 
-			// remove from linked addrs
-			var f = MASSGIS.linkedAddressLayer.getFeatureByFid($(that).data('fid'));
-			MASSGIS.linkedAddressLayer.removeFeatures([f]);
-
-			// remove address_point_id reference from MAF
-			MASSGIS.undoStack = {
-				"action"			: 'click_to_delete',
-				"address_point_id"	: f.attributes.address_point_id,
-				"edit_status"		: f.attributes.edit_status,
-				"status_color"		: f.attributes.status_color
-			};
+				// remove address_point_id reference from MAF
+				MASSGIS.undoStack = {
+					"action"			: 'click_to_delete',
+					"address_point_id"	: f.attributes.address_point_id,
+					"edit_status"		: f.attributes.edit_status,
+					"status_color"		: f.attributes.status_color
+				};
 
 
-			var txId = MASSGIS.generateTXId();
+				var txId = MASSGIS.generateTXId();
 
-			// get the lyr_maf version of this feature
-			if (f.attributes.master_address_id == 0) {
-				// this isn't a point that the server even knows about yet.  No need to retain it going forward
-				f = MASSGIS.lyr_maf.getFeatureByFid(f.fid);
-				f.state = OpenLayers.State.DELETE;
-				MASSGIS.undoStack.f = f;
-			} else {
-				f = MASSGIS.lyr_maf.getFeaturesByAttribute('master_address_id',f.attributes.master_address_id)[0];
-				MASSGIS.undoStack.f = f;
-				//edit_status changes
-				//f.attributes.edit_status = 'DELETED';
-				f.attributes.address_status = 'DELETED';
-				// leave a "null" address_point_id as null, but tack "_D" onto any legit addrptids
-				f.attributes.address_point_id = f.attributes.address_point_id ? f.attributes.address_point_id + "_D" : f.attributes.address_point_id;
-				f.attributes.status_color = 'NONE';
-				f.attributes.transaction_id = txId;
-				f.attributes.time_stamp = new Date().toTimeString().split(" ")[0];
-				f.state = OpenLayers.State.UPDATE;
-				f.attributes.__MODIFIED__ = true;
-			}
-
-			MASSGIS.renderLinkedAddresses();
-			MASSGIS.renderAddressList();
-			MASSGIS.lyr_maf.strategies[1].save();
-			MASSGIS.lyr_maf.reindex();
-
-			if (!f.attributes.address_point_id) {
-				return;
-			}
-
-			// we also need to mark a potentially affected address point as red, if it were orphaned
-			addrPts = MASSGIS.lyr_address_points.getFeaturesByAttribute('address_point_id',MASSGIS.undoStack.address_point_id);
-			if (addrPts.length > 0) {
-				siblingMadRecs = MASSGIS.lyr_maf.getFeaturesByAttribute('address_point_id',MASSGIS.undoStack.address_point_id);
-				if (siblingMadRecs.length === 0) {
-					MASSGIS.undoStack.address_point = {
-						"status_color" :	addrPts[0].attributes.status_color,
-						"address_status" :	addrPts[0].attributes.address_status
-					};
-					addrPts[0].state = OpenLayers.State.UPDATE;
-					addrPts[0].attributes.__MODIFIED__ = true;
-					addrPts[0].attributes.status_color = "RED";
-					addrPts[0].attributes.address_status = "UNLINKED";
-					addrPts[0].attributes.label_text = MASSGIS.lyr_address_points.draw_linked_st_num(addrPts[0]);
-					addrPts[0].attributes.transaction_id = txId;
-					addrPts[0].attributes.time_stamp = new Date().toTimeString().split(" ")[0];
-					MASSGIS.lyr_address_points.strategies[1].save();
-					MASSGIS.lyr_address_points.reindex();
-					MASSGIS.lyr_address_points.redraw();
+				// get the lyr_maf version of this feature
+				if (f.attributes.master_address_id == 0) {
+					// this isn't a point that the server even knows about yet.  No need to retain it going forward
+					f = MASSGIS.lyr_maf.getFeatureByFid(f.fid);
+					f.state = OpenLayers.State.DELETE;
+					MASSGIS.undoStack.f = f;
+				} else {
+					f = MASSGIS.lyr_maf.getFeaturesByAttribute('master_address_id',f.attributes.master_address_id)[0];
+					MASSGIS.undoStack.f = f;
+					//edit_status changes
+					//f.attributes.edit_status = 'DELETED';
+					f.attributes.address_status = 'DELETED';
+					// leave a "null" address_point_id as null, but tack "_D" onto any legit addrptids
+					f.attributes.address_point_id = f.attributes.address_point_id ? f.attributes.address_point_id + "_D" : f.attributes.address_point_id;
+					f.attributes.status_color = 'NONE';
+					f.attributes.transaction_id = txId;
+					f.attributes.time_stamp = new Date().toTimeString().split(" ")[0];
+					f.state = OpenLayers.State.UPDATE;
+					f.attributes.__MODIFIED__ = true;
 				}
-			}
+
+				MASSGIS.renderLinkedAddresses();
+				MASSGIS.renderAddressList();
+				MASSGIS.lyr_maf.strategies[1].save();
+				MASSGIS.lyr_maf.reindex();
+
+				if (!f.attributes.address_point_id) {
+					return;
+				}
+
+				// we also need to mark a potentially affected address point as red, if it were orphaned
+				addrPts = MASSGIS.lyr_address_points.getFeaturesByAttribute('address_point_id',MASSGIS.undoStack.address_point_id);
+				if (addrPts.length > 0) {
+					siblingMadRecs = MASSGIS.lyr_maf.getFeaturesByAttribute('address_point_id',MASSGIS.undoStack.address_point_id);
+					if (siblingMadRecs.length === 0) {
+						MASSGIS.undoStack.address_point = {
+							"status_color" :	addrPts[0].attributes.status_color,
+							"address_status" :	addrPts[0].attributes.address_status
+						};
+						addrPts[0].state = OpenLayers.State.UPDATE;
+						addrPts[0].attributes.__MODIFIED__ = true;
+						addrPts[0].attributes.status_color = "RED";
+						addrPts[0].attributes.address_status = "UNLINKED";
+						addrPts[0].attributes.label_text = MASSGIS.lyr_address_points.draw_linked_st_num(addrPts[0]);
+						addrPts[0].attributes.transaction_id = txId;
+						addrPts[0].attributes.time_stamp = new Date().toTimeString().split(" ")[0];
+						MASSGIS.lyr_address_points.strategies[1].save();
+						MASSGIS.lyr_address_points.reindex();
+						MASSGIS.lyr_address_points.redraw();
+					}
+				}
+			});
 		});
 	});
 
@@ -2806,40 +2826,40 @@ MASSGIS.init_map = function() {
 		var tappedOnAPoint = potentialPts.length > 0;
 
 		if (!tappedOnAPoint && MASSGIS.preSelectionLayer.features.length === 1 && MASSGIS.selectionLayer.features.length === 0) {
-			var conf = confirm("Add a new part to the selected Address Point?");
-			if (!conf) {
-				return;
-			}
-			var newFeature = MASSGIS.wktReader.read("MULTIPOINT(" + clickedPt.lon + " " + clickedPt.lat + ")");
-			MASSGIS.preSelectionLayer.features[0].geometry.components.push(newFeature.geometry.components[0].clone());
-			MASSGIS.preSelectionLayer.features[0].geometry.calculateBounds();
-			MASSGIS.preSelectionLayer.events.triggerEvent(
-				"featuremodified",
-				{
-					object:MASSGIS.preSelectionLayer,
-					feature: MASSGIS.preSelectionLayer.features[0]
-				}
-			);
+			$('#confirm_add_multi_part_popup').popup().popup("open");
+			$('#confirm_add_multi_part_popup a[data-icon=plus]').on("click", function (e) {
 
-			var existingFeature = MASSGIS.lyr_address_points.getFeaturesByAttribute("address_point_id",MASSGIS.preSelectionLayer.features[0].attributes.address_point_id);
-			existingFeature[0].geometry.components.push(newFeature.geometry.components[0].clone());
-			existingFeature[0].geometry.calculateBounds();
-			existingFeature[0].attributes.__MODIFIED__ = true;
-			existingFeature[0].attributes.geographic_edit_status = 'MODIFIED';
-			existingFeature[0].attributes.transaction_id = MASSGIS.generateTXId();
-			existingFeature[0].attributes.time_stamp = new Date().toTimeString().split(" ")[0];
-			existingFeature[0].state = OpenLayers.State.UPDATE;
-			MASSGIS.lyr_address_points.strategies[1].save();
-			MASSGIS.lyr_address_points.events.triggerEvent(
-				"featuremodified",
-				{
-					object:MASSGIS.lyr_address_points,
-					feature: existingFeature[0]
-				}
-			);
+				var newFeature = MASSGIS.wktReader.read("MULTIPOINT(" + clickedPt.lon + " " + clickedPt.lat + ")");
+				MASSGIS.preSelectionLayer.features[0].geometry.components.push(newFeature.geometry.components[0].clone());
+				MASSGIS.preSelectionLayer.features[0].geometry.calculateBounds();
+				MASSGIS.preSelectionLayer.events.triggerEvent(
+					"featuremodified",
+					{
+						object:MASSGIS.preSelectionLayer,
+						feature: MASSGIS.preSelectionLayer.features[0]
+					}
+				);
 
-			MASSGIS.preSelectionLayer.redraw();
-			MASSGIS.lyr_address_points.redraw();
+				var existingFeature = MASSGIS.lyr_address_points.getFeaturesByAttribute("address_point_id",MASSGIS.preSelectionLayer.features[0].attributes.address_point_id);
+				existingFeature[0].geometry.components.push(newFeature.geometry.components[0].clone());
+				existingFeature[0].geometry.calculateBounds();
+				existingFeature[0].attributes.__MODIFIED__ = true;
+				existingFeature[0].attributes.geographic_edit_status = 'MODIFIED';
+				existingFeature[0].attributes.transaction_id = MASSGIS.generateTXId();
+				existingFeature[0].attributes.time_stamp = new Date().toTimeString().split(" ")[0];
+				existingFeature[0].state = OpenLayers.State.UPDATE;
+				MASSGIS.lyr_address_points.strategies[1].save();
+				MASSGIS.lyr_address_points.events.triggerEvent(
+					"featuremodified",
+					{
+						object:MASSGIS.lyr_address_points,
+						feature: existingFeature[0]
+					}
+				);
+
+				MASSGIS.preSelectionLayer.redraw();
+				MASSGIS.lyr_address_points.redraw();
+			});
 		} else if (!tappedOnAPoint && MASSGIS.preSelectionLayer.features.length === 0 && MASSGIS.selectionLayer.features.length === 0) {
 			var conf = confirm("Add a new Address Point at this location?");
 			if (!conf) {
