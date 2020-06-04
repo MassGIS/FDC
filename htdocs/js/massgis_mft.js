@@ -171,7 +171,7 @@ MASSGIS.cachedTiles = {};
 MASSGIS.undoStack = {};
 MASSGIS.username;
 MASSGIS.addressQueryResults = [];
-MASSGIS.mapTypes = ['Road','Ortho 2013-14','Ortho 2014-15','Blank'];
+MASSGIS.mapTypes = ['Road','Ortho 2019','Blank'];
 MASSGIS.mapType = MASSGIS.mapTypes[0];
 
 
@@ -2048,6 +2048,7 @@ MASSGIS.sync_address_points = function() {
 			//url: "http://www.mapsonline.net/geoserver-2.1.1/wfs",
 			//url: 'https://wsgw.mass.gov/geoserver/wfs',
 		        //url: 'http://10.202.25.161:8080/geoserver/wfs',
+		        //url: 'https://giswebservices.dev.maps.digital.mass.gov/geoserver/wfs',
 		        url: 'https://gis-prod.digital.mass.gov/geoserver/wfs',
 			//url: 'http://10.202.26.28/geoserver/wfs',
 			data: {
@@ -2107,7 +2108,8 @@ MASSGIS.sync_maf = function() {
 			//url: "http://www.mapsonline.net/geoserver-2.1.1/wfs",
 			//url: "https://wsgw.mass.gov/geoserver/wfs",
 			//url: "http://10.202.25.161:8080/geoserver/wfs",
-			url: "https://gis-prod.digital.mass.gov/geoserver/wfs",
+			//url: "https://giswebservices.dev.maps.digital.mass.gov/geoserver/wfs",
+            url: "https://gis-prod.digital.mass.gov/geoserver/wfs",
                         //url: "http://10.202.26.28/geoserver/wfs",
 			dataType: "jsonp",
 			data: {
@@ -2480,7 +2482,7 @@ MASSGIS.init_map = function() {
 			"layerName" : "MassGIS Statewide BaseMap",
 			//"url" : "http://gisprpxy.itd.state.ma.us/arcgisserver/rest/services/Basemaps/Orthos_DigitalGlobe2011_2012/MapServer",
 			//"url" : "https://tiles.arcgis.com/tiles/hGdibHYSPO59RG1h/arcgis/rest/services/DigitalGlobe_2011_2012/MapServer",
-			"url" : "https://tiles.arcgis.com/tiles/hGdibHYSPO59RG1h/arcgis/rest/services/USGS_Orthos_2013_2014/MapServer",
+			"url" : "https://tiles.arcgis.com/tiles/hGdibHYSPO59RG1h/arcgis/rest/services/USGS_Orthos_2019/MapServer",
 			"isBaseLayer" : true
 		});
 	statewideOrthosLoaded2014.done(function() {
@@ -2514,7 +2516,8 @@ MASSGIS.init_map = function() {
 			],
 			"matrix_set": "0to20",
 			"title": "Google_2014_2015_WMTS",
-			"url": "https://orthos.massgis.state.ma.us/login/path/major-madam-cricket-caviar/wmts?"
+//			"url": "https://orthos.massgis.state.ma.us/login/path/major-madam-cricket-caviar/wmts?"
+                      "url": "https://orthos.massgis.state.ma.us/login/path/binary-precise-prague-friday/wmts?"
 		}
 	};
 	MASSGIS.mgisOrthosStatewideLayer2015 = new OpenLayers.Layer.WMTS({
@@ -3134,21 +3137,14 @@ MASSGIS.init_map = function() {
 				.css('width','81px');
 			jQuery('#layer_switcher .ui-btn-text').html('MassGIS');
 		}
-		else if (MASSGIS.mapType == 'Ortho 2013-14') {
+		else if (MASSGIS.mapType == 'Ortho 2019') {
 			MASSGIS.map.setBaseLayer(MASSGIS.mgisOrthosStatewideLayer2014);
 			jQuery('.ui-icon.ui-icon-shadow.ui-icon-mft-sattelite')
-				.css('background-image','url("img/sattelite_icon.png")')
-				.css('width','74px');
-			jQuery('#layer_switcher .ui-btn-text').html('Google');
-		}
-		else if (MASSGIS.mapType == 'Ortho 2014-15') {
-			MASSGIS.map.setBaseLayer(MASSGIS.mgisOrthosStatewideLayer2015);
-			jQuery('.ui-icon.ui-icon-shadow.ui-icon-mft-sattelite')
 				.css('background-image','url("img/blankBase_icon.png")')
-				.css('text-color','black')
-				.css('width','65px');
+				.css('width','74px');
 			jQuery('#layer_switcher .ui-btn-text').html('blank');
-		} else if (MASSGIS.mapType == 'Blank') {
+		}
+		else if (MASSGIS.mapType == 'Blank') {
 			MASSGIS.map.setBaseLayer(MASSGIS.blankBaseLayer);
 			jQuery('.ui-icon.ui-icon-shadow.ui-icon-mft-sattelite').css('background-image','url("img/streets_icon.png")');
 			jQuery('.ui-icon.ui-icon-shadow.ui-icon-mft-sattelite')
