@@ -2267,11 +2267,14 @@ MASSGIS.renderAddressList = function() {
 
 MASSGIS.loadAndCacheAGSLayer = function(opts) {
 	var ret = $.Deferred();
+	var bNoCache = document.location.href.indexOf('nocache') !== -1;
 	if (window.localStorage.getItem("ags_config_" + opts.url)) {
 		data = JSON.parse(window.localStorage.getItem("ags_config_" + opts.url));
-		opts.deferred = ret;
-		MASSGIS.loadAndCacheAGSLayerResponse(data,opts);
-		return ret;
+		if (data.timestamp && data.timestamp > (new Date().getTime() - 14*24*60*60*1000) && !bNoCache) {
+			opts.deferred = ret;
+			MASSGIS.loadAndCacheAGSLayerResponse(data,opts);
+			return ret;
+		}
 	}
 
 	$.jsonp(
@@ -2293,6 +2296,7 @@ MASSGIS.loadAndCacheAGSLayer = function(opts) {
 
 MASSGIS.loadAndCacheAGSLayerResponse = function(data,opts) {
 	var layerInfo = data;
+	layerInfo.timestamp = new Date().getTime();
 	window.localStorage.setItem("ags_config_" + opts.url,JSON.stringify(layerInfo));
 	var layerMaxExtent = new OpenLayers.Bounds(
 		layerInfo.fullExtent.xmin,
@@ -2306,36 +2310,11 @@ MASSGIS.loadAndCacheAGSLayerResponse = function(data,opts) {
 		resolutions.push(layerInfo.tileInfo.lods[i].resolution);
 	}
 
-	// MASSGIS[opts.layerId] = new OpenLayers.Layer.ArcGISCache(opts.layerName, layerInfo.tileServers,
-	// {
-	// 	isBaseLayer: opts.isBaseLayer,
-	// 	resolutions: resolutions,
-	// 	tileSize: new OpenLayers.Size(layerInfo.tileInfo.cols, layerInfo.tileInfo.rows),
-	// 	tileOrigin: new OpenLayers.LonLat(layerInfo.tileInfo.origin.x , layerInfo.tileInfo.origin.y),
-	// 	maxExtent: layerMaxExtent,
-	// 	//projection: 'EPSG:' + layerInfo.spatialReference.wkid,
-	// 	projection: 'EPSG:900913',
-	// 	visibility: false,
-	// 	tileOptions: {
-	// 		crossOriginKeyword: "anonymous"
-	// 	},
-	// 	eventListeners: {
-	// 		tileloaded: function(evt) {
-	// 			if (evt && evt.tile.url.substr(0, 5) === "data:") {
-	// 				//console.log('cache hit on old orthos basemap');
-	// 			}
-	// 			else {
-	// 				//console.log('cache miss on old orthos basemap');
-	// 			}
-	// 		}
-	// 	}
-	// });
-	var customRes = MASSGIS.osmLayer.resolutions.slice(0).splice(0,20); // MassGIS layers are tiled through level 19, but osm only gives resolutions to level 18
-	opts.numZoomLevels && opts.numZoomLevels > 19 && customRes.push(0.2); // this gives the extra resolution level we need
+	var maxZoom = opts.numZoomLevels || 19;
 	MASSGIS[opts.layerId] = new OpenLayers.Layer.ArcGISCache( opts.layerName, [opts.url], {
 		isBaseLayer: opts.isBaseLayer,
-		resolutions: customRes,
-		numZoomLevels : opts.numZoomLevels || 19,
+		resolutions: resolutions.slice(0, maxZoom + 1),
+		numZoomLevels : maxZoom,
 		tileSize: new OpenLayers.Size(256, 256),
 		tileOrigin: new OpenLayers.LonLat(layerInfo.tileInfo.origin.x , layerInfo.tileInfo.origin.y),
 		projection: 'EPSG:900913',
@@ -2343,16 +2322,6 @@ MASSGIS.loadAndCacheAGSLayerResponse = function(data,opts) {
 			crossOriginKeyword: "anonymous"
 		},
 		visibility: false
-		// eventListeners: {
-		// 	tileloaded: function(evt) {
-		// 		if (evt && evt.tile.url.substr(0, 5) === "data:") {
-		// 			//console.log('cache hit on old orthos basemap');
-		// 		}
-		// 		else {
-		// 			//console.log('cache miss on old orthos basemap');
-		// 		}
-		// 	}
-		// }
 	});
 	MASSGIS.map.addLayer(MASSGIS[opts.layerId]);
 	opts.deferred.resolve();
@@ -2360,7 +2329,6 @@ MASSGIS.loadAndCacheAGSLayerResponse = function(data,opts) {
 
 
 MASSGIS.init_map = function() {
-
 	MASSGIS.map = new OpenLayers.Map(
 		'map' ,
 		{
@@ -2402,7 +2370,6 @@ MASSGIS.init_map = function() {
 
 	});
 
-
 	var msagLoaded = MASSGIS.loadAndCacheAGSLayer(
 		{
 			"layerId" : "msagOverlay",
@@ -2414,7 +2381,7 @@ MASSGIS.init_map = function() {
 		MASSGIS.msagOverlay.setVisibility(false);
 		MASSGIS.map.events.on({
 			"changebaselayer": function() {
-				if (MASSGIS.map.baseLayer == MASSGIS.mgisOrthosStatewideLayer2014 || MASSGIS.map.baseLayer == MASSGIS.mgisOrthosStatewideLayer2015) {
+				if (MASSGIS.map.baseLayer == MASSGIS.mgisOrthosStatewideLayer2019) {
 					if (MASSGIS.map.getZoom() <= 12) {
 						MASSGIS.msagOverlay.setVisibility(false);
 					} else {
@@ -2427,7 +2394,7 @@ MASSGIS.init_map = function() {
 				}
 			},
 			"zoomend" : function() {
-				if (MASSGIS.map.baseLayer == MASSGIS.mgisOrthosStatewideLayer2014 || MASSGIS.map.baseLayer == MASSGIS.mgisOrthosStatewideLayer2015) {
+				if (MASSGIS.map.baseLayer == MASSGIS.mgisOrthosStatewideLayer2019) {
 					if (MASSGIS.map.getZoom() <= 12) {
 						MASSGIS.msagOverlay.setVisibility(false);
 					} else {
@@ -2453,7 +2420,7 @@ MASSGIS.init_map = function() {
 		MASSGIS.streetsOverlay.setVisibility(false);
 		MASSGIS.map.events.on({
 			"changebaselayer": function() {
-				if (MASSGIS.map.baseLayer == MASSGIS.mgisOrthosStatewideLayer2014 || MASSGIS.map.baseLayer == MASSGIS.mgisOrthosStatewideLayer2015) {
+				if (MASSGIS.map.baseLayer == MASSGIS.mgisOrthosStatewideLayer2019) {
 					if (MASSGIS.map.getZoom() <= 12) {
 						MASSGIS.streetsOverlay.setVisibility(false);
 					} else {
@@ -2465,7 +2432,7 @@ MASSGIS.init_map = function() {
 				}
 			},
 			"zoomend" : function() {
-				if (MASSGIS.map.baseLayer == MASSGIS.mgisOrthosStatewideLayer2014 || MASSGIS.map.baseLayer == MASSGIS.mgisOrthosStatewideLayer2015) {
+				if (MASSGIS.map.baseLayer == MASSGIS.mgisOrthosStatewideLayer2019) {
 					if (MASSGIS.map.getZoom() <= 12) {
 						MASSGIS.streetsOverlay.setVisibility(false);
 					} else {
@@ -2476,64 +2443,63 @@ MASSGIS.init_map = function() {
 		});
 	});
 
-	var statewideOrthosLoaded2014 = MASSGIS.loadAndCacheAGSLayer(
+	var statewideOrthosLoaded2019 = MASSGIS.loadAndCacheAGSLayer(
 		{
-			"layerId" : "mgisOrthosStatewideLayer2014",
+			"layerId" : "mgisOrthosStatewideLayer2019",
 			"layerName" : "MassGIS Statewide BaseMap",
-			//"url" : "http://gisprpxy.itd.state.ma.us/arcgisserver/rest/services/Basemaps/Orthos_DigitalGlobe2011_2012/MapServer",
-			//"url" : "https://tiles.arcgis.com/tiles/hGdibHYSPO59RG1h/arcgis/rest/services/DigitalGlobe_2011_2012/MapServer",
 			"url" : "https://tiles.arcgis.com/tiles/hGdibHYSPO59RG1h/arcgis/rest/services/USGS_Orthos_2019/MapServer",
-			"isBaseLayer" : true
+			"isBaseLayer" : true,
+			"numZoomLevels" : 20
 		});
-	statewideOrthosLoaded2014.done(function() {
-		MASSGIS.mgisOrthosStatewideLayer2014.setZIndex(6);
+	statewideOrthosLoaded2019.done(function() {
+		MASSGIS.mgisOrthosStatewideLayer2019.setZIndex(6);
 	});
-	var wmts = {
-		"Google 2014-2015 Orthoimagery": {
-			"layer": "imagery",
-			"matrix_ids": [
-				"0to20:00",
-				"0to20:01",
-				"0to20:02",
-				"0to20:03",
-				"0to20:04",
-				"0to20:05",
-				"0to20:06",
-				"0to20:07",
-				"0to20:08",
-				"0to20:09",
-				"0to20:10",
-				"0to20:11",
-				"0to20:12",
-				"0to20:13",
-				"0to20:14",
-				"0to20:15",
-				"0to20:16",
-				"0to20:17",
-				"0to20:18",
-				"0to20:19",
-				"0to20:20"
-			],
-			"matrix_set": "0to20",
-			"title": "Google_2014_2015_WMTS",
-//			"url": "https://orthos.massgis.state.ma.us/login/path/major-madam-cricket-caviar/wmts?"
-                      "url": "https://orthos.massgis.state.ma.us/login/path/binary-precise-prague-friday/wmts?"
-		}
-	};
-	MASSGIS.mgisOrthosStatewideLayer2015 = new OpenLayers.Layer.WMTS({
-		name:        'Google 2014-2015 Orthoimagery'
-		,url:         wmts['Google 2014-2015 Orthoimagery'].url
-		,layer:       wmts['Google 2014-2015 Orthoimagery'].layer
-		,matrixSet:   wmts['Google 2014-2015 Orthoimagery'].matrix_set
-		,matrixIds:   wmts['Google 2014-2015 Orthoimagery'].matrix_ids
-		,format:      'image/png'
-		,style:       '_null'
-		,attribution: ''
-		,projection:  'EPSG:900913'
-		,numZoomLevels: wmts['Google 2014-2015 Orthoimagery'].matrix_ids.length
-	});
-	MASSGIS.map.addLayer(MASSGIS.mgisOrthosStatewideLayer2015);
-	MASSGIS.mgisOrthosStatewideLayer2015.setZIndex(6);
+// 	var wmts = {
+// 		"Google 2014-2015 Orthoimagery": {
+// 			"layer": "imagery",
+// 			"matrix_ids": [
+// 				"0to20:00",
+// 				"0to20:01",
+// 				"0to20:02",
+// 				"0to20:03",
+// 				"0to20:04",
+// 				"0to20:05",
+// 				"0to20:06",
+// 				"0to20:07",
+// 				"0to20:08",
+// 				"0to20:09",
+// 				"0to20:10",
+// 				"0to20:11",
+// 				"0to20:12",
+// 				"0to20:13",
+// 				"0to20:14",
+// 				"0to20:15",
+// 				"0to20:16",
+// 				"0to20:17",
+// 				"0to20:18",
+// 				"0to20:19",
+// 				"0to20:20"
+// 			],
+// 			"matrix_set": "0to20",
+// 			"title": "Google_2014_2015_WMTS",
+// //			"url": "https://orthos.massgis.state.ma.us/login/path/major-madam-cricket-caviar/wmts?"
+//                       "url": "https://orthos.massgis.state.ma.us/login/path/binary-precise-prague-friday/wmts?"
+// 		}
+// 	};
+// 	MASSGIS.mgisOrthosStatewideLayer2015 = new OpenLayers.Layer.WMTS({
+// 		name:        'Google 2014-2015 Orthoimagery'
+// 		,url:         wmts['Google 2014-2015 Orthoimagery'].url
+// 		,layer:       wmts['Google 2014-2015 Orthoimagery'].layer
+// 		,matrixSet:   wmts['Google 2014-2015 Orthoimagery'].matrix_set
+// 		,matrixIds:   wmts['Google 2014-2015 Orthoimagery'].matrix_ids
+// 		,format:      'image/png'
+// 		,style:       '_null'
+// 		,attribution: ''
+// 		,projection:  'EPSG:900913'
+// 		,numZoomLevels: wmts['Google 2014-2015 Orthoimagery'].matrix_ids.length
+// 	});
+// 	MASSGIS.map.addLayer(MASSGIS.mgisOrthosStatewideLayer2015);
+// 	MASSGIS.mgisOrthosStatewideLayer2015.setZIndex(6);
 
 	MASSGIS.blankBaseLayer = new OpenLayers.Layer.WMS("Blank",
 		'img/white.png',
@@ -2555,7 +2521,7 @@ MASSGIS.init_map = function() {
 		});
 		var cacheRead = new OpenLayers.Control.CacheRead({
 			autoActivate : true,
-			layers : [MASSGIS.osmLayer,MASSGIS.mgisOrthosStatewideLayer2014,MASSGIS.mgisOrthosStatewideLayer2015,MASSGIS.streetsOverlay]
+			layers : [MASSGIS.osmLayer,MASSGIS.mgisOrthosStatewideLayer2019,MASSGIS.streetsOverlay]
 			,fetch: function(evt) {
 				if (this.active && window.localStorage && evt.tile instanceof OpenLayers.Tile.Image) {
 					var tile = evt.tile,
@@ -3138,7 +3104,7 @@ MASSGIS.init_map = function() {
 			jQuery('#layer_switcher .ui-btn-text').html('MassGIS');
 		}
 		else if (MASSGIS.mapType == 'Ortho 2019') {
-			MASSGIS.map.setBaseLayer(MASSGIS.mgisOrthosStatewideLayer2014);
+			MASSGIS.map.setBaseLayer(MASSGIS.mgisOrthosStatewideLayer2019);
 			jQuery('.ui-icon.ui-icon-shadow.ui-icon-mft-sattelite')
 				.css('background-image','url("img/blankBase_icon.png")')
 				.css('width','74px');
