@@ -2381,6 +2381,7 @@ MASSGIS.init_map = function() {
 		MASSGIS.msagOverlay.setVisibility(false);
 		MASSGIS.map.events.on({
 			"changebaselayer": function() {
+				MASSGIS.msagOverlay.serverResolutions = MASSGIS.map.baseLayer.resolutions.slice(0,22);
 				if (MASSGIS.map.baseLayer == MASSGIS.mgisOrthosStatewideLayer2019) {
 					if (MASSGIS.map.getZoom() <= 12) {
 						MASSGIS.msagOverlay.setVisibility(false);
@@ -2394,6 +2395,7 @@ MASSGIS.init_map = function() {
 				}
 			},
 			"zoomend" : function() {
+				MASSGIS.msagOverlay.serverResolutions = MASSGIS.map.baseLayer.resolutions.slice(0,22);
 				if (MASSGIS.map.baseLayer == MASSGIS.mgisOrthosStatewideLayer2019) {
 					if (MASSGIS.map.getZoom() <= 12) {
 						MASSGIS.msagOverlay.setVisibility(false);
@@ -2414,12 +2416,13 @@ MASSGIS.init_map = function() {
 			//"url" : "https://tiles.arcgis.com/tiles/hGdibHYSPO59RG1h/arcgis/rest/services/StreetsBasemap2/MapServer",
 			"url" : "https://tiles.arcgis.com/tiles/hGdibHYSPO59RG1h/arcgis/rest/services/Base_Streets_with_Labels/MapServer",
 			"isBaseLayer" : false,
-			"numZoomLevels" : 20
+			"numZoomLevels" : 21
 		});
 	streetsLoaded.done(function() {
 		MASSGIS.streetsOverlay.setVisibility(false);
 		MASSGIS.map.events.on({
 			"changebaselayer": function() {
+				MASSGIS.streetsOverlay.serverResolutions = MASSGIS.map.baseLayer.resolutions.slice(0,22);
 				if (MASSGIS.map.baseLayer == MASSGIS.mgisOrthosStatewideLayer2019) {
 					if (MASSGIS.map.getZoom() <= 12) {
 						MASSGIS.streetsOverlay.setVisibility(false);
@@ -2432,6 +2435,7 @@ MASSGIS.init_map = function() {
 				}
 			},
 			"zoomend" : function() {
+				MASSGIS.streetsOverlay.serverResolutions = MASSGIS.map.baseLayer.resolutions.slice(0,22);
 				if (MASSGIS.map.baseLayer == MASSGIS.mgisOrthosStatewideLayer2019) {
 					if (MASSGIS.map.getZoom() <= 12) {
 						MASSGIS.streetsOverlay.setVisibility(false);
@@ -2454,52 +2458,6 @@ MASSGIS.init_map = function() {
 	statewideOrthosLoaded2019.done(function() {
 		MASSGIS.mgisOrthosStatewideLayer2019.setZIndex(6);
 	});
-// 	var wmts = {
-// 		"Google 2014-2015 Orthoimagery": {
-// 			"layer": "imagery",
-// 			"matrix_ids": [
-// 				"0to20:00",
-// 				"0to20:01",
-// 				"0to20:02",
-// 				"0to20:03",
-// 				"0to20:04",
-// 				"0to20:05",
-// 				"0to20:06",
-// 				"0to20:07",
-// 				"0to20:08",
-// 				"0to20:09",
-// 				"0to20:10",
-// 				"0to20:11",
-// 				"0to20:12",
-// 				"0to20:13",
-// 				"0to20:14",
-// 				"0to20:15",
-// 				"0to20:16",
-// 				"0to20:17",
-// 				"0to20:18",
-// 				"0to20:19",
-// 				"0to20:20"
-// 			],
-// 			"matrix_set": "0to20",
-// 			"title": "Google_2014_2015_WMTS",
-// //			"url": "https://orthos.massgis.state.ma.us/login/path/major-madam-cricket-caviar/wmts?"
-//                       "url": "https://orthos.massgis.state.ma.us/login/path/binary-precise-prague-friday/wmts?"
-// 		}
-// 	};
-// 	MASSGIS.mgisOrthosStatewideLayer2015 = new OpenLayers.Layer.WMTS({
-// 		name:        'Google 2014-2015 Orthoimagery'
-// 		,url:         wmts['Google 2014-2015 Orthoimagery'].url
-// 		,layer:       wmts['Google 2014-2015 Orthoimagery'].layer
-// 		,matrixSet:   wmts['Google 2014-2015 Orthoimagery'].matrix_set
-// 		,matrixIds:   wmts['Google 2014-2015 Orthoimagery'].matrix_ids
-// 		,format:      'image/png'
-// 		,style:       '_null'
-// 		,attribution: ''
-// 		,projection:  'EPSG:900913'
-// 		,numZoomLevels: wmts['Google 2014-2015 Orthoimagery'].matrix_ids.length
-// 	});
-// 	MASSGIS.map.addLayer(MASSGIS.mgisOrthosStatewideLayer2015);
-// 	MASSGIS.mgisOrthosStatewideLayer2015.setZIndex(6);
 
 	MASSGIS.blankBaseLayer = new OpenLayers.Layer.WMS("Blank",
 		'img/white.png',
@@ -2545,15 +2503,6 @@ MASSGIS.init_map = function() {
 							}
 						});
 					});
-//					if (dataURI) {
-//						console.log("cache hit for tile " + url);
-//						tile.url = dataURI;
-//						if (evt.type === "tileerror") {
-//							tile.setImgSrc(dataURI);
-//						}
-//					} else {
-//						//console.log("cache miss for tile " + url);
-//					}
 				}
 			}
 		});
