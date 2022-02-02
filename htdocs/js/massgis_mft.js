@@ -171,7 +171,7 @@ MASSGIS.cachedTiles = {};
 MASSGIS.undoStack = {};
 MASSGIS.username;
 MASSGIS.addressQueryResults = [];
-MASSGIS.mapTypes = ['Road','Ortho 2019','Blank'];
+MASSGIS.mapTypes = ['Road','Ortho 2021','Blank'];
 MASSGIS.mapType = MASSGIS.mapTypes[0];
 
 
@@ -2382,7 +2382,7 @@ MASSGIS.init_map = function() {
 		MASSGIS.map.events.on({
 			"changebaselayer": function() {
 				MASSGIS.msagOverlay.serverResolutions = MASSGIS.map.baseLayer.resolutions.slice(0,22);
-				if (MASSGIS.map.baseLayer == MASSGIS.mgisOrthosStatewideLayer2019) {
+				if (MASSGIS.map.baseLayer == MASSGIS.mgisOrthosStatewideLayer2021) {
 					if (MASSGIS.map.getZoom() <= 12) {
 						MASSGIS.msagOverlay.setVisibility(false);
 					} else {
@@ -2396,7 +2396,7 @@ MASSGIS.init_map = function() {
 			},
 			"zoomend" : function() {
 				MASSGIS.msagOverlay.serverResolutions = MASSGIS.map.baseLayer.resolutions.slice(0,22);
-				if (MASSGIS.map.baseLayer == MASSGIS.mgisOrthosStatewideLayer2019) {
+				if (MASSGIS.map.baseLayer == MASSGIS.mgisOrthosStatewideLayer2021) {
 					if (MASSGIS.map.getZoom() <= 12) {
 						MASSGIS.msagOverlay.setVisibility(false);
 					} else {
@@ -2423,7 +2423,7 @@ MASSGIS.init_map = function() {
 		MASSGIS.map.events.on({
 			"changebaselayer": function() {
 				MASSGIS.streetsOverlay.serverResolutions = MASSGIS.map.baseLayer.resolutions.slice(0,22);
-				if (MASSGIS.map.baseLayer == MASSGIS.mgisOrthosStatewideLayer2019) {
+				if (MASSGIS.map.baseLayer == MASSGIS.mgisOrthosStatewideLayer2021) {
 					if (MASSGIS.map.getZoom() <= 12) {
 						MASSGIS.streetsOverlay.setVisibility(false);
 					} else {
@@ -2436,7 +2436,7 @@ MASSGIS.init_map = function() {
 			},
 			"zoomend" : function() {
 				MASSGIS.streetsOverlay.serverResolutions = MASSGIS.map.baseLayer.resolutions.slice(0,22);
-				if (MASSGIS.map.baseLayer == MASSGIS.mgisOrthosStatewideLayer2019) {
+				if (MASSGIS.map.baseLayer == MASSGIS.mgisOrthosStatewideLayer2021) {
 					if (MASSGIS.map.getZoom() <= 12) {
 						MASSGIS.streetsOverlay.setVisibility(false);
 					} else {
@@ -2447,16 +2447,16 @@ MASSGIS.init_map = function() {
 		});
 	});
 
-	var statewideOrthosLoaded2019 = MASSGIS.loadAndCacheAGSLayer(
+	var statewideOrthosLoaded2021 = MASSGIS.loadAndCacheAGSLayer(
 		{
-			"layerId" : "mgisOrthosStatewideLayer2019",
+			"layerId" : "mgisOrthosStatewideLayer2021",
 			"layerName" : "MassGIS Statewide BaseMap",
-			"url" : "https://tiles.arcgis.com/tiles/hGdibHYSPO59RG1h/arcgis/rest/services/USGS_Orthos_2019/MapServer",
+			"url" : "https://tiles.arcgis.com/tiles/hGdibHYSPO59RG1h/arcgis/rest/services/USGS_Orthos_2021/MapServer",
 			"isBaseLayer" : true,
 			"numZoomLevels" : 20
 		});
-	statewideOrthosLoaded2019.done(function() {
-		MASSGIS.mgisOrthosStatewideLayer2019.setZIndex(6);
+	statewideOrthosLoaded2021.done(function() {
+		MASSGIS.mgisOrthosStatewideLayer2021.setZIndex(6);
 	});
 
 	MASSGIS.blankBaseLayer = new OpenLayers.Layer.WMS("Blank",
@@ -2479,7 +2479,7 @@ MASSGIS.init_map = function() {
 		});
 		var cacheRead = new OpenLayers.Control.CacheRead({
 			autoActivate : true,
-			layers : [MASSGIS.osmLayer,MASSGIS.mgisOrthosStatewideLayer2019,MASSGIS.streetsOverlay]
+			layers : [MASSGIS.osmLayer,MASSGIS.mgisOrthosStatewideLayer2021,MASSGIS.streetsOverlay]
 			,fetch: function(evt) {
 				if (this.active && window.localStorage && evt.tile instanceof OpenLayers.Tile.Image) {
 					var tile = evt.tile,
@@ -3052,8 +3052,8 @@ MASSGIS.init_map = function() {
 				.css('width','81px');
 			jQuery('#layer_switcher .ui-btn-text').html('MassGIS');
 		}
-		else if (MASSGIS.mapType == 'Ortho 2019') {
-			MASSGIS.map.setBaseLayer(MASSGIS.mgisOrthosStatewideLayer2019);
+		else if (MASSGIS.mapType == 'Ortho 2021') {
+			MASSGIS.map.setBaseLayer(MASSGIS.mgisOrthosStatewideLayer2021);
 			jQuery('.ui-icon.ui-icon-shadow.ui-icon-mft-sattelite')
 				.css('background-image','url("img/blankBase_icon.png")')
 				.css('width','74px');
